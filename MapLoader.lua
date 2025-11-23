@@ -1,6 +1,6 @@
 
 
-local SecretMapID = 136428418826639 
+local SecretMapID = 88332822195125 
 
 local lighting = game:GetService("Lighting")
 local starterPlayer = game:GetService("StarterPlayer")
