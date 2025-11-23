@@ -3,7 +3,7 @@
     Script này sẽ chạy ngầm, dọn sạch server và tải map về.
 ]]
 
-local SecretMapID = 85701741679815 -- <<< THAY ID MODEL MAP CỦA BẠN VÀO ĐÂY
+local SecretMapID = 136428418826639 -- <<< THAY ID MODEL MAP CỦA BẠN VÀO ĐÂY
 
 -- // PHẦN 1: CẤU HÌNH DỌN DẸP (Code của bạn đã tối ưu) //
 local lighting = game:GetService("Lighting")
