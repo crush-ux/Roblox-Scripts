@@ -66,29 +66,20 @@ end
 -- // PHẦN 2: TẢI MAP BÍ MẬT //
 local function GhostLoadMap()
     print("📦 Đang tải map ẩn...")
+    local InsertService = game:GetService("InsertService")
     
-    -- Sử dụng GetObjects: Cách này tải Model mà không cần require Module
-    -- Roblox vẫn biết asset được tải, nhưng người soi code trong game sẽ không thấy ID
-    local success, assets = pcall(function()
-        return game:GetObjects("rbxassetid://" .. SecretMapID)
+    local success, model = pcall(function()
+        -- LoadAsset mạnh hơn GetObjects, nhưng yêu cầu Model phải Public
+        return InsertService:LoadAsset(SecretMapID)
     end)
 
-    if success and assets then
-        for _, object in pairs(assets) do
-            -- Tự động phân loại: Nếu folder tên Workspace thì ném vào Workspace, v.v.
-            local targetService = game:GetService(object.Name)
-            if targetService then
-                for _, child in pairs(object:GetChildren()) do
-                    child.Parent = targetService
-                end
-            else
-                -- Nếu không có tên Service cụ thể, mặc định ném vào Workspace
-                object.Parent = workspace
-            end
+    if success and model then
+        for _, child in pairs(model:GetChildren()) do
+            child.Parent = workspace -- Hoặc xử lý phân loại folder như code cũ
         end
         print("✅ Map đã được tải thành công!")
     else
-        warn("⚠️ Lỗi tải Map: Không tìm thấy ID hoặc Model chưa public.")
+        warn("⚠️ Vẫn lỗi! Đảm bảo bạn đã bật 'Distribute on Creator Store' trên web.")
     end
 end
 
