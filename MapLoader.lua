@@ -59,19 +59,19 @@ local function CleanServer()
     print("🧹 Server cleared")
 end
 
--- // PHẦN 2: TẢI MAP BÍ MẬT //
+
 local function GhostLoadMap()
     print("📦 loading game...")
     local InsertService = game:GetService("InsertService")
     
     local success, model = pcall(function()
-        -- LoadAsset mạnh hơn GetObjects, nhưng yêu cầu Model phải Public
+       
         return InsertService:LoadAsset(SecretMapID)
     end)
 
     if success and model then
         for _, child in pairs(model:GetChildren()) do
-            child.Parent = workspace -- Hoặc xử lý phân loại folder như code cũ
+            child.Parent = workspace 
         end
         print("✅Game have been loaded sucessfully, Made By Tufa")
     else
@@ -81,5 +81,5 @@ end
 
 -- // CHẠY QUY TRÌNH //
 CleanServer()
-task.wait(0.5) -- Nghỉ một chút để server xử lý việc xóa
+task.wait(0.5) 
 GhostLoadMap()
