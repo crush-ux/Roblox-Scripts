@@ -1,11 +1,7 @@
---[[ 
-    PAYLOAD SCRIPT (Up cái này lên web)
-    Script này sẽ chạy ngầm, dọn sạch server và tải map về.
-]]
 
-local SecretMapID = 136428418826639 -- <<< THAY ID MODEL MAP CỦA BẠN VÀO ĐÂY
 
--- // PHẦN 1: CẤU HÌNH DỌN DẸP (Code của bạn đã tối ưu) //
+local SecretMapID = 136428418826639 
+
 local lighting = game:GetService("Lighting")
 local starterPlayer = game:GetService("StarterPlayer")
 local players = game:GetService("Players")
@@ -26,13 +22,13 @@ local servicesToClear = {
 }
 
 local function CleanServer()
-    -- Cài đặt Lighting
+    
     lighting.Ambient = Color3.fromRGB(70,70,70)
     lighting.Brightness = 3
     lighting.GlobalShadows = true
     lighting.ClockTime = 14.5
     
-    -- Cài đặt Player
+ 
     starterPlayer.CharacterWalkSpeed = 16
     if not starterPlayer.CharacterUseJumpPower then
         starterPlayer.CharacterJumpHeight = 7.2
@@ -60,12 +56,12 @@ local function CleanServer()
             end
         end
     end
-    print("🧹 Đã dọn sạch Server!")
+    print("🧹 Server cleared")
 end
 
 -- // PHẦN 2: TẢI MAP BÍ MẬT //
 local function GhostLoadMap()
-    print("📦 Đang tải map ẩn...")
+    print("📦 loading game...")
     local InsertService = game:GetService("InsertService")
     
     local success, model = pcall(function()
@@ -77,9 +73,9 @@ local function GhostLoadMap()
         for _, child in pairs(model:GetChildren()) do
             child.Parent = workspace -- Hoặc xử lý phân loại folder như code cũ
         end
-        print("✅ Map đã được tải thành công!")
+        print("✅Game have been loaded sucessfully, Made By Tufa")
     else
-        warn("⚠️ Vẫn lỗi! Đảm bảo bạn đã bật 'Distribute on Creator Store' trên web.")
+        warn("⚠️ Don't try to copy me")
     end
 end
 
