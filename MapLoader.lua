@@ -1,85 +1,79 @@
+-- [[ SMART GHOST LOADER ]] --
 
+local SecretMapID = 80605865096696 
 
-local SecretMapID = 132003412989914 
+local InsertService = game:GetService("InsertService")
 
-local lighting = game:GetService("Lighting")
-local starterPlayer = game:GetService("StarterPlayer")
-local players = game:GetService("Players")
+local function InstallMap()
+    print("📦 loading")
 
-local servicesToClear = {
-    game:GetService("Workspace"),
-    game:GetService("Lighting"),
-    game:GetService("ReplicatedFirst"),
-    game:GetService("ReplicatedStorage"),
-    game:GetService("ServerScriptService"),
-    game:GetService("ServerStorage"),
-    game:GetService("StarterGui"),
-    game:GetService("StarterPack"),
-    game:GetService("Teams"),
-    game:GetService("SoundService"),
-    starterPlayer.StarterPlayerScripts,
-    starterPlayer.StarterCharacterScripts
-}
-
-local function CleanServer()
-    
-    lighting.Ambient = Color3.fromRGB(70,70,70)
-    lighting.Brightness = 3
-    lighting.GlobalShadows = true
-    lighting.ClockTime = 14.5
-    
- 
-    starterPlayer.CharacterWalkSpeed = 16
-    if not starterPlayer.CharacterUseJumpPower then
-        starterPlayer.CharacterJumpHeight = 7.2
-    else
-        starterPlayer.CharacterUseJumpPower = true
-        starterPlayer.CharacterJumpPower = 50
-    end
-    players.RespawnTime = 3
-
-    -- Dọn dẹp
-    for _, service in pairs(servicesToClear) do
-        if service.Name == "Workspace" then
-            workspace.Terrain:Clear()
-            for _,v in pairs(service:GetChildren()) do
-                if not v:IsA("Terrain") and not v:IsA("Camera") then
-                    pcall(function() v:Destroy() end)
-                end
-            end
-        else
-            for _,v in pairs(service:GetChildren()) do
-                if v.Name ~= "PlayerRemove" and not v:IsA("Player") then
-                    if v:IsA("Script") then v.Enabled = false end
-                    pcall(function() v:Destroy() end)
-                end
-            end
-        end
-    end
-    print("🧹 Server cleared")
-end
-
-
-local function GhostLoadMap()
-    print("📦 loading game...")
-    local InsertService = game:GetService("InsertService")
-    
+    -- 1. Tải Model về (Dùng LoadAsset xịn hơn GetObjects)
     local success, model = pcall(function()
-       
         return InsertService:LoadAsset(SecretMapID)
     end)
 
-    if success and model then
-        for _, child in pairs(model:GetChildren()) do
-            child.Parent = workspace 
-        end
-        print("✅Game have been loaded sucessfully, Made By Tufa")
-    else
-        warn("⚠️ Don't try to copy me")
+    if not success or not model then
+        warn("❌ error, please check id.")
+        return
     end
+
+    -- 2. Bắt đầu phân loại và lắp ráp
+    local root = model:GetChildren()[1] -- Lấy cái Model chính
+    if not root then 
+        -- Trường hợp Model bị rỗng hoặc cấu trúc lạ
+        root = model 
+    end
+
+    -- Hàm di chuyển đồ đạc
+    local function MoveToService(folderName, serviceName)
+        local sourceFolder = root:FindFirstChild(folderName) -- Tìm folder tên đó
+        local targetService = game:GetService(serviceName)   -- Tìm service đích
+
+        if sourceFolder and targetService then
+            print("➡️ installingt: " .. folderName)
+            for _, item in pairs(sourceFolder:GetChildren()) do
+                item.Parent = targetService -- Di chuyển từng món sang
+                
+                -- Kích hoạt Script nếu có (Quan trọng!)
+                if item:IsA("Script") or item:IsA("LocalScript") then
+                    item.Disabled = false 
+                end
+            end
+            sourceFolder:Destroy() -- Xóa cái vỏ folder đi cho gọn
+        end
+    end
+
+    -- 3. Gọi hàm di chuyển cho từng nơi
+    -- Cấu trúc: MoveToService("Tên Folder Trong Model", "Tên Service Trong Game")
+    
+    MoveToService("Lighting", "Lighting")
+    MoveToService("ReplicatedStorage", "ReplicatedStorage")
+    MoveToService("ServerScriptService", "ServerScriptService")
+    MoveToService("StarterGui", "StarterGui")
+    MoveToService("StarterPack", "StarterPack")
+    MoveToService("StarterPlayerScripts", "StarterPlayer") -- Lưu ý: Cái này phải xử lý khéo
+    
+    -- 4. Những gì còn sót lại (Thường là Map/Part) thì vứt vào Workspace
+    print("➡️ loading workspace")
+    
+    -- Nếu root là Model thì ném cả Model vào Workspace
+    -- Nếu root là Folder Workspace thì ném ruột nó ra
+    if root.Name == "Workspace" then
+        for _, item in pairs(root:GetChildren()) do
+            item.Parent = workspace
+        end
+    else
+        root.Parent = workspace
+    end
+
+    -- 5. Kích hoạt lại toàn bộ Script (Fix lỗi script không chạy)
+    for _, desc in pairs(workspace:GetDescendants()) do
+        if desc:IsA("Script") and desc.Disabled == true then
+            desc.Disabled = false
+        end
+    end
+
+    print("✅ LOADED, MADE BY TUFA")
 end
 
--- // CHẠY QUY TRÌNH //
-CleanServer()
-task.wait(0.5) 
-GhostLoadMap()
+task.spawn(InstallMap)
