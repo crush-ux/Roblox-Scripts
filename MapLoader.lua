@@ -1,6 +1,6 @@
 -- [[ SMART GHOST LOADER ]] --
 
-local SecretMapID = 84310498926661 
+local SecretMapID = 111367249182397 
 
 local InsertService = game:GetService("InsertService")
 
