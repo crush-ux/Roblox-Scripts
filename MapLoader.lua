@@ -1,6 +1,6 @@
 -- [[ SMART GHOST LOADER V3 - FIXED CRASH ]] --
 
-local SecretMapID = 136642270676710 -- ID Map của bạn
+local SecretMapID = 137867566503870 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
 local Players = game:GetService("Players")
 
