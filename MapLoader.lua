@@ -1,6 +1,6 @@
 -- [[ SMART GHOST LOADER V2 - CLEAN & LOAD ]] --
 
-local SecretMapID = 111367249182397 -- Thay ID map của bạn vào đây
+local SecretMapID = 136642270676710 -- Thay ID map của bạn vào đây
 local InsertService = game:GetService("InsertService")
 local Players = game:GetService("Players")
 
