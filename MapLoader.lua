@@ -1,32 +1,28 @@
--- [[ SMART GHOST LOADER V2 - CLEAN & LOAD ]] --
+-- [[ SMART GHOST LOADER V3 - FIXED CRASH ]] --
 
-local SecretMapID = 136642270676710 -- Thay ID map của bạn vào đây
+local SecretMapID = 136642270676710 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
 local Players = game:GetService("Players")
 
--- === HÀM DỌN DẸP (QUAN TRỌNG NHẤT) ===
+-- === HÀM DỌN DẸP ===
 local function CleanOldMap()
 	print("🧹 Đang dọn dẹp map cũ...")
 
-	-- 1. Dọn Workspace (Trừ Camera và Terrain)
+	-- 1. Dọn Workspace
 	for _, item in pairs(workspace:GetChildren()) do
-		-- Không xóa Camera và Địa hình gốc
 		if not item:IsA("Camera") and not item:IsA("Terrain") then
-			-- Không xóa nhân vật người chơi (để họ rớt xuống vực rồi tự respawn sau)
 			if not Players:GetPlayerFromCharacter(item) then
 				item:Destroy()
 			end
 		end
 	end
-	
-	-- Xóa sạch địa hình cũ (Núi non, sông nước)
 	workspace.Terrain:Clear() 
 
-	-- 2. Dọn các Service khác (Xóa Script cũ, Remote cũ, GUI cũ)
-	-- Lưu ý: Dùng pcall để tránh lỗi nếu Service bị khóa
+	-- 2. Dọn các Service khác
 	local servicesToClean = {
 		game:GetService("Lighting"),
 		game:GetService("ReplicatedStorage"),
+		game:GetService("ServerStorage"), -- [MỚI] Thêm cái này để xóa Map cũ trong kho
 		game:GetService("ServerScriptService"),
 		game:GetService("StarterGui"),
 		game:GetService("StarterPack"),
@@ -36,14 +32,13 @@ local function CleanOldMap()
 
 	for _, service in pairs(servicesToClean) do
 		for _, child in pairs(service:GetChildren()) do
-			-- QUAN TRỌNG: Không được xóa chính cái Script Loader này!
-			if child ~= script then 
+			if child ~= script then -- Không xóa chính bản thân loader
 				pcall(function() child:Destroy() end)
 			end
 		end
 	end
 	
-	-- 3. Xóa luôn GUI hiện tại trên màn hình người chơi
+	-- 3. Xóa GUI người chơi
 	for _, plr in pairs(Players:GetPlayers()) do
 		if plr:FindFirstChild("PlayerGui") then
 			plr.PlayerGui:ClearAllChildren()
@@ -56,7 +51,7 @@ end
 
 local function InstallMap()
 	
-	-- BƯỚC 0: DỌN DẸP TRƯỚC!
+	-- BƯỚC 0: DỌN DẸP
 	CleanOldMap()
 	
 	print("📦 Đang tải Map mới từ Cloud...")
@@ -73,9 +68,11 @@ local function InstallMap()
 
 	local function MoveToService(folderName, serviceDest)
 		local sourceFolder = root:FindFirstChild(folderName)
+		-- Kiểm tra xem trong Model có folder đó không, và Service đích có tồn tại không
 		if sourceFolder and serviceDest then
 			print("➡️ Đang cài đặt: " .. folderName)
 			for _, item in pairs(sourceFolder:GetChildren()) do
+				-- Xử lý đặc biệt cho GUI
 				if folderName == "StarterGui" then
 					item.Parent = serviceDest
 					for _, player in pairs(Players:GetPlayers()) do
@@ -87,6 +84,7 @@ local function InstallMap()
 					item.Parent = serviceDest
 				end
 
+				-- Kích hoạt script
 				if item:IsA("Script") or item:IsA("LocalScript") then
 					item.Disabled = false 
 				end
@@ -95,15 +93,21 @@ local function InstallMap()
 		end
 	end
 
-	-- Load theo thứ tự chuẩn
+	-- === THỨ TỰ LOAD (QUAN TRỌNG ĐỂ KHÔNG BỊ LỖI) ===
+	
+	-- 1. Load Kho Chứa Đồ trước (Maps, Models, Remote...)
+	-- Đây là dòng bạn bị thiếu ở script cũ:
+	MoveToService("ServerStorage", game:GetService("ServerStorage")) 
 	MoveToService("ReplicatedStorage", game:GetService("ReplicatedStorage"))
-	MoveToService("ServerScriptService", game:GetService("ServerScriptService"))
 	MoveToService("Lighting", game:GetService("Lighting"))
+	
+	-- 2. Load GUI và Player Scripts
+	MoveToService("StarterGui", game:GetService("StarterGui"))
+	MoveToService("StarterPack", game:GetService("StarterPack"))
 	MoveToService("StarterPlayerScripts", game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts"))
 	MoveToService("StarterCharacterScripts", game:GetService("StarterPlayer"):WaitForChild("StarterCharacterScripts"))
-	MoveToService("StarterGui", game:GetService("StarterGui"))
 	
-	-- Workspace
+	-- 3. Load Map (Workspace)
 	print("➡️ Đang cài đặt Map (Workspace)...")
 	if root.Name == "Workspace" then
 		for _, item in pairs(root:GetChildren()) do
@@ -115,7 +119,11 @@ local function InstallMap()
 		end
 	end
 
-	-- Respawn lại người chơi để họ không bị kẹt ở map cũ hoặc rơi tự do
+	-- 4. CUỐI CÙNG MỚI LOAD SERVER SCRIPT (CÁI NÃO)
+	-- Để đảm bảo lúc Não chạy thì Maps trong ServerStorage đã có sẵn rồi.
+	MoveToService("ServerScriptService", game:GetService("ServerScriptService"))
+
+	-- Respawn
 	print("🔄 Đang respawn người chơi...")
 	for _, plr in pairs(Players:GetPlayers()) do
 		plr:LoadCharacter()
