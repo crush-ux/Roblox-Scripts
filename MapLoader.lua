@@ -1,79 +1,127 @@
--- [[ SMART GHOST LOADER ]] --
+-- [[ SMART GHOST LOADER V2 - CLEAN & LOAD ]] --
 
-local SecretMapID = 111367249182397 
-
+local SecretMapID = 111367249182397 -- Thay ID map của bạn vào đây
 local InsertService = game:GetService("InsertService")
+local Players = game:GetService("Players")
+
+-- === HÀM DỌN DẸP (QUAN TRỌNG NHẤT) ===
+local function CleanOldMap()
+	print("🧹 Đang dọn dẹp map cũ...")
+
+	-- 1. Dọn Workspace (Trừ Camera và Terrain)
+	for _, item in pairs(workspace:GetChildren()) do
+		-- Không xóa Camera và Địa hình gốc
+		if not item:IsA("Camera") and not item:IsA("Terrain") then
+			-- Không xóa nhân vật người chơi (để họ rớt xuống vực rồi tự respawn sau)
+			if not Players:GetPlayerFromCharacter(item) then
+				item:Destroy()
+			end
+		end
+	end
+	
+	-- Xóa sạch địa hình cũ (Núi non, sông nước)
+	workspace.Terrain:Clear() 
+
+	-- 2. Dọn các Service khác (Xóa Script cũ, Remote cũ, GUI cũ)
+	-- Lưu ý: Dùng pcall để tránh lỗi nếu Service bị khóa
+	local servicesToClean = {
+		game:GetService("Lighting"),
+		game:GetService("ReplicatedStorage"),
+		game:GetService("ServerScriptService"),
+		game:GetService("StarterGui"),
+		game:GetService("StarterPack"),
+		game:GetService("StarterPlayer").StarterPlayerScripts,
+		game:GetService("StarterPlayer").StarterCharacterScripts
+	}
+
+	for _, service in pairs(servicesToClean) do
+		for _, child in pairs(service:GetChildren()) do
+			-- QUAN TRỌNG: Không được xóa chính cái Script Loader này!
+			if child ~= script then 
+				pcall(function() child:Destroy() end)
+			end
+		end
+	end
+	
+	-- 3. Xóa luôn GUI hiện tại trên màn hình người chơi
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr:FindFirstChild("PlayerGui") then
+			plr.PlayerGui:ClearAllChildren()
+		end
+	end
+
+	print("✨ Map cũ đã được xóa sạch!")
+end
+-- =======================================
 
 local function InstallMap()
-    print("📦 loading")
+	
+	-- BƯỚC 0: DỌN DẸP TRƯỚC!
+	CleanOldMap()
+	
+	print("📦 Đang tải Map mới từ Cloud...")
+	local success, model = pcall(function()
+		return InsertService:LoadAsset(SecretMapID)
+	end)
 
-    -- 1. Tải Model về (Dùng LoadAsset xịn hơn GetObjects)
-    local success, model = pcall(function()
-        return InsertService:LoadAsset(SecretMapID)
-    end)
+	if not success or not model then
+		warn("❌ LỖI TẢI ASSET! Kiểm tra lại ID hoặc Quyền sở hữu.")
+		return
+	end
 
-    if not success or not model then
-        warn("❌ error, please check id.")
-        return
-    end
+	local root = model:GetChildren()[1] or model
 
-    -- 2. Bắt đầu phân loại và lắp ráp
-    local root = model:GetChildren()[1] -- Lấy cái Model chính
-    if not root then 
-        -- Trường hợp Model bị rỗng hoặc cấu trúc lạ
-        root = model 
-    end
+	local function MoveToService(folderName, serviceDest)
+		local sourceFolder = root:FindFirstChild(folderName)
+		if sourceFolder and serviceDest then
+			print("➡️ Đang cài đặt: " .. folderName)
+			for _, item in pairs(sourceFolder:GetChildren()) do
+				if folderName == "StarterGui" then
+					item.Parent = serviceDest
+					for _, player in pairs(Players:GetPlayers()) do
+						if player:FindFirstChild("PlayerGui") then
+							item:Clone().Parent = player.PlayerGui
+						end
+					end
+				else
+					item.Parent = serviceDest
+				end
 
-    -- Hàm di chuyển đồ đạc
-    local function MoveToService(folderName, serviceName)
-        local sourceFolder = root:FindFirstChild(folderName) -- Tìm folder tên đó
-        local targetService = game:GetService(serviceName)   -- Tìm service đích
+				if item:IsA("Script") or item:IsA("LocalScript") then
+					item.Disabled = false 
+				end
+			end
+			sourceFolder:Destroy()
+		end
+	end
 
-        if sourceFolder and targetService then
-            print("➡️ installingt: " .. folderName)
-            for _, item in pairs(sourceFolder:GetChildren()) do
-                item.Parent = targetService -- Di chuyển từng món sang
-                
-                -- Kích hoạt Script nếu có (Quan trọng!)
-                if item:IsA("Script") or item:IsA("LocalScript") then
-                    item.Disabled = false 
-                end
-            end
-            sourceFolder:Destroy() -- Xóa cái vỏ folder đi cho gọn
-        end
-    end
+	-- Load theo thứ tự chuẩn
+	MoveToService("ReplicatedStorage", game:GetService("ReplicatedStorage"))
+	MoveToService("ServerScriptService", game:GetService("ServerScriptService"))
+	MoveToService("Lighting", game:GetService("Lighting"))
+	MoveToService("StarterPlayerScripts", game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts"))
+	MoveToService("StarterCharacterScripts", game:GetService("StarterPlayer"):WaitForChild("StarterCharacterScripts"))
+	MoveToService("StarterGui", game:GetService("StarterGui"))
+	
+	-- Workspace
+	print("➡️ Đang cài đặt Map (Workspace)...")
+	if root.Name == "Workspace" then
+		for _, item in pairs(root:GetChildren()) do
+			item.Parent = workspace
+		end
+	else
+		for _, item in pairs(root:GetChildren()) do
+			item.Parent = workspace
+		end
+	end
 
-    -- 3. Gọi hàm di chuyển cho từng nơi
-    -- Cấu trúc: MoveToService("Tên Folder Trong Model", "Tên Service Trong Game")
-    
-    MoveToService("Lighting", "Lighting")
-    MoveToService("ReplicatedStorage", "ReplicatedStorage")
-    MoveToService("ServerScriptService", "ServerScriptService")
-    MoveToService("StarterGui", "StarterGui")
-    MoveToService("StarterPack", "StarterPack")
-    MoveToService("StarterPlayerScripts", "StarterPlayer") -- Lưu ý: Cái này phải xử lý khéo
-    
-    -- 4. Những gì còn sót lại (Thường là Map/Part) thì vứt vào Workspace
-    print("➡️ loading workspace")
-    
-    -- Nếu root là Model thì ném cả Model vào Workspace
-    -- Nếu root là Folder Workspace thì ném ruột nó ra
-    if root.Name == "Workspace" then
-        for _, item in pairs(root:GetChildren()) do
-            item.Parent = workspace
-        end
-    else
-        root.Parent = workspace
-    end
+	-- Respawn lại người chơi để họ không bị kẹt ở map cũ hoặc rơi tự do
+	print("🔄 Đang respawn người chơi...")
+	for _, plr in pairs(Players:GetPlayers()) do
+		plr:LoadCharacter()
+	end
 
-    -- 5. Kích hoạt lại toàn bộ Script (Fix lỗi script không chạy)
-    for _, desc in pairs(workspace:GetDescendants()) do
-        if desc:IsA("Script") and desc.Disabled == true then
-            desc.Disabled = false
-        end
-    end
-
-    print("✅ LOADED, MADE BY TUFA")
+	print("✅ DONE! MAP MỚI ĐÃ SẴN SÀNG.")
 end
 
 task.spawn(InstallMap)
