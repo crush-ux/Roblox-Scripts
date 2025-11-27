@@ -1,5 +1,4 @@
--- [[ SMART GHOST LOADER V5 - THE UNPACKER ]] --
--- Fix lỗi: Script bị kẹt trong Workspace.Model
+-- [[ SMART GHOST LOADER V5.1 - FIXED PRINT ERROR ]] --
 
 local SecretMapID = 138225591825247 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
@@ -36,14 +35,12 @@ local function Install()
 	local success, model = pcall(function() return InsertService:LoadAsset(SecretMapID) end)
 	if not success or not model then warn("❌ Lỗi tải ID!") return end
 
-	-- Lấy cái vỏ hộp bên ngoài
 	local container = model:GetChildren()[1] or model
 	print("🔨 Đang tháo dỡ hộp: " .. container.Name)
 
 	-- HÀM DI CHUYỂN THÔNG MINH
 	local function MoveContents(folder, destination)
 		for _, item in pairs(folder:GetChildren()) do
-			-- Xử lý riêng cho GUI (Copy cho cả người đang chơi)
 			if destination.Name == "StarterGui" then
 				item.Parent = destination
 				for _, p in pairs(Players:GetPlayers()) do
@@ -51,7 +48,6 @@ local function Install()
 						item:Clone().Parent = p.PlayerGui
 					end
 				end
-			-- Xử lý riêng cho StarterPlayer
 			elseif destination.Name == "StarterPlayer" then
 				if item.Name == "StarterPlayerScripts" then
 					for _, s in pairs(item:GetChildren()) do s.Parent = destination.StarterPlayerScripts end
@@ -59,48 +55,41 @@ local function Install()
 					for _, c in pairs(item:GetChildren()) do c.Parent = destination.StarterCharacterScripts end
 				end
 			else
-				-- Các Service khác cứ ném thẳng vào
 				item.Parent = destination
 			end
 			
-			-- Bật script lên
 			if item:IsA("Script") or item:IsA("LocalScript") then item.Disabled = false end
 		end
 	end
 
-	-- [[ QUAN TRỌNG: PHÂN LOẠI ĐỒ ĐẠC ]] --
-	-- Duyệt qua từng folder bên trong cái hộp Model
+	-- [[ PHÂN LOẠI ĐỒ ĐẠC ]] --
 	for _, folder in pairs(container:GetChildren()) do
-		local serviceName = folder.Name
+		local folderName = folder.Name -- [ĐÃ SỬA] Dùng biến folderName cho thống nhất
 		
-		-- Kiểm tra xem tên folder có trùng với Service game không
-		local isService, service = pcall(function() return game:GetService(serviceName) end)
+		local isService, service = pcall(function() return game:GetService(folderName) end)
 		
 		if isService and service then
-			print("   📂 Chuyển nội dung vào: " .. serviceName)
+			print("   📂 Chuyển nội dung vào: " .. folderName)
 			MoveContents(folder, service)
-			folder:Destroy() -- Xóa cái vỏ folder đi
+			folder:Destroy() 
 		else
-			-- Nếu không phải Service (ví dụ Map, Part...) thì ném vào Workspace
-			print("   🌍 Ném vào Workspace: " .. folderName)
+			-- [ĐÃ SỬA LỖI DÒNG 85 TẠI ĐÂY]
+			print("   🌍 Ném vào Workspace: " .. folderName) 
 			folder.Parent = workspace
-			-- Nếu chính nó là Script thì bật lên
 			if folder:IsA("Script") then folder.Disabled = false end
 		end
 	end
 	
-	-- Nếu cái vỏ container ban đầu là Map thì ném nó ra Workspace luôn
-	if container.Parent then -- Nếu nó chưa bị xóa
+	if container.Parent then 
 		if container.Name ~= "Workspace" and container.Name ~= "Model" then 
 			container.Parent = workspace 
 		end
 	end
 
-	-- Respawn
 	task.wait(1)
 	print("🔄 Respawn người chơi...")
 	for _, p in pairs(Players:GetPlayers()) do p:LoadCharacter() end
-	print("✅ Cài đặt hoàn tất! Hết lỗi đường dẫn.")
+	print("✅ Cài đặt hoàn tất!")
 end
 
 task.spawn(Install)
