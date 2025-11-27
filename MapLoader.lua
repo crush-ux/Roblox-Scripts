@@ -1,7 +1,7 @@
 -- [[ SMART GHOST LOADER V8 - THE ANESTHESIA (GÂY MÊ) ]] --
 -- Fix lỗi: Tắt toàn bộ Script trước khi xếp đồ
 
-local SecretMapID = 138225591825247 -- ID Map của bạn
+local SecretMapID = 78113293799796 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
 local Players = game:GetService("Players")
 
