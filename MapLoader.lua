@@ -1,6 +1,6 @@
 -- [[ SMART GHOST LOADER V4 - AUTO DETECT SERVICE ]] --
 
-local SecretMapID = 72513051444713 -- ID Map của bạn
+local SecretMapID = 77847395740854 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
 local Players = game:GetService("Players")
 
