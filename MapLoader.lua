@@ -1,5 +1,5 @@
--- [[ SMART GHOST LOADER V7 - THE FREEZER ]] --
--- Fix lỗi: Script chạy trước khi kịp xếp đồ
+-- [[ SMART GHOST LOADER V8 - THE ANESTHESIA (GÂY MÊ) ]] --
+-- Fix lỗi: Tắt toàn bộ Script trước khi xếp đồ
 
 local SecretMapID = 138225591825247 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
@@ -36,26 +36,38 @@ local function Install()
 	local success, model = pcall(function() return InsertService:LoadAsset(SecretMapID) end)
 	if not success or not model then warn("❌ Lỗi tải ID!") return end
 
-	-- [[ CHIẾN THUẬT ĐÓNG BĂNG (QUAN TRỌNG NHẤT) ]] --
-	-- Nhét ngay vào ServerStorage để Script KHÔNG ĐƯỢC CHẠY lung tung
-	model.Parent = game:GetService("ServerStorage") 
+	-- [[ BƯỚC QUAN TRỌNG NHẤT: GÂY MÊ TOÀN BỘ ]] --
+	-- Tắt script ngay khi nó còn đang ở dạng dữ liệu (chưa vào game)
+	for _, desc in pairs(model:GetDescendants()) do
+		if desc:IsA("Script") or desc:IsA("LocalScript") then
+			desc.Disabled = true -- NGỦ ĐI CON!
+		end
+	end
 	
-	-- Xác định cái vỏ hộp
+	-- Giờ mới được phép ném vào Workspace để tháo dỡ
+	model.Parent = workspace 
+	
 	local container = model
 	if #model:GetChildren() == 1 and model:GetChildren()[1]:IsA("Model") then
 		container = model:GetChildren()[1]
 	end
 	
-	print("❄️ Đã đóng băng tại ServerStorage. Bắt đầu tháo dỡ...")
+	print("💤 Script đang ngủ. Bắt đầu tháo dỡ an toàn...")
 
-	-- HÀM DI CHUYỂN
+	-- HÀM DI CHUYỂN & ĐÁNH THỨC
 	local function MoveContents(folder, destination)
 		for _, item in pairs(folder:GetChildren()) do
+			-- Di chuyển
 			if destination.Name == "StarterGui" then
 				item.Parent = destination
 				for _, p in pairs(Players:GetPlayers()) do
 					if p:FindFirstChild("PlayerGui") then
-						item:Clone().Parent = p.PlayerGui
+						local clone = item:Clone()
+						clone.Parent = p.PlayerGui
+						-- Đánh thức LocalScript trong GUI
+						for _, s in pairs(clone:GetDescendants()) do
+							if s:IsA("LocalScript") then s.Disabled = false end
+						end
 					end
 				end
 			elseif destination.Name == "StarterPlayer" then
@@ -68,15 +80,24 @@ local function Install()
 				item.Parent = destination
 			end
 			
-			-- Bật lại script (nếu nó bị tắt)
-			if item:IsA("Script") or item:IsA("LocalScript") then item.Disabled = false end
+			-- [[ ĐÁNH THỨC SCRIPT ]] --
+			-- Chỉ bật lại sau khi nó đã nằm yên vị ở nhà mới
+			if item:IsA("Script") or item:IsA("LocalScript") then
+				item.Disabled = false 
+			end
+			-- Nếu bên trong item con còn script nữa (ví dụ script trong tool)
+			for _, sub in pairs(item:GetDescendants()) do
+				if sub:IsA("Script") or sub:IsA("LocalScript") then
+					sub.Disabled = false
+				end
+			end
 		end
 	end
 
-	-- [[ BƯỚC 1: CHUYỂN MODULE & ĐỒ ĐẠC TRƯỚC ]] --
-	-- Để đảm bảo khi Script chạy thì đồ đạc đã có sẵn
-	local priority = {"ReplicatedStorage", "ServerStorage", "Lighting", "Workspace"}
+	-- [[ THỨ TỰ DI CHUYỂN ]] --
 	
+	-- 1. ƯU TIÊN: Module & ServerStorage (Để Script tỉnh dậy là thấy đồ ngay)
+	local priority = {"ReplicatedStorage", "ServerStorage", "Lighting"}
 	for _, name in pairs(priority) do
 		local folder = container:FindFirstChild(name)
 		if folder then
@@ -87,7 +108,7 @@ local function Install()
 		end
 	end
 
-	-- [[ BƯỚC 2: CHUYỂN GUI & STARTER PLAYER ]] --
+	-- 2. THỨ YẾU: GUI, StarterPack
 	local secondary = {"StarterGui", "StarterPack", "StarterPlayer"}
 	for _, name in pairs(secondary) do
 		local folder = container:FindFirstChild(name)
@@ -98,28 +119,32 @@ local function Install()
 		end
 	end
 
-	-- [[ BƯỚC 3: CUỐI CÙNG MỚI THẢ SCRIPT RA (GIẢI BĂNG) ]] --
+	-- 3. CUỐI CÙNG: SERVER SCRIPT SERVICE (ĐÁNH THỨC NÃO BỘ)
 	local scriptFolder = container:FindFirstChild("ServerScriptService")
 	if scriptFolder then
-		print("   🧠 Kích hoạt Server Scripts...")
+		print("   🧠 Đánh thức Server Scripts...")
 		MoveContents(scriptFolder, game:GetService("ServerScriptService"))
 		scriptFolder:Destroy()
 	end
 	
-	-- Dọn rác còn sót lại (thường là Map nằm lẻ tẻ)
+	-- 4. MAP & CÁC THỨ CÒN LẠI
 	for _, child in pairs(container:GetChildren()) do
-		print("   🌍 Ném phần còn lại vào Workspace: " .. child.Name)
+		print("   🌍 Map vào Workspace: " .. child.Name)
 		child.Parent = workspace
+		-- Bật lại script trong Map (nếu có)
+		for _, s in pairs(child:GetDescendants()) do
+			if s:IsA("Script") then s.Disabled = false end
+		end
 	end
 	
-	-- Xóa vỏ hộp
+	-- Dọn vỏ
 	if container.Parent then container:Destroy() end
 	if model.Parent then model:Destroy() end
 
 	task.wait(1)
 	print("🔄 Respawn người chơi...")
 	for _, p in pairs(Players:GetPlayers()) do p:LoadCharacter() end
-	print("✅ CÀI ĐẶT HOÀN TẤT V7 (NO ERROR)")
+	print("✅ CÀI ĐẶT HOÀN TẤT V8")
 end
 
-task.spawn
+task.spawn(Install)
