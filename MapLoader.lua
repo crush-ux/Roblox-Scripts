@@ -1,4 +1,4 @@
--- [[ SMART GHOST LOADER V5.1 - FIXED PRINT ERROR ]] --
+-- [[ SMART GHOST LOADER V6 - FINAL FIX ]] --
 
 local SecretMapID = 138225591825247 -- ID Map của bạn
 local InsertService = game:GetService("InsertService")
@@ -27,7 +27,7 @@ local function CleanMap()
 	end
 end
 
--- 2. HÀM CÀI ĐẶT & THÁO DỠ
+-- 2. HÀM CÀI ĐẶT
 local function Install()
 	CleanMap()
 	print("📦 Đang tải Model...")
@@ -35,10 +35,17 @@ local function Install()
 	local success, model = pcall(function() return InsertService:LoadAsset(SecretMapID) end)
 	if not success or not model then warn("❌ Lỗi tải ID!") return end
 
-	local container = model:GetChildren()[1] or model
-	print("🔨 Đang tháo dỡ hộp: " .. container.Name)
+	-- [[ FIX QUAN TRỌNG V6: XÁC ĐỊNH ĐÚNG CONTAINER ]] --
+	-- Logic: Nếu Model tải về chỉ chứa đúng 1 Model con bên trong, thì lấy cái con đó.
+	-- Còn nếu nó chứa nhiều folder (Lighting, ServerStorage...) thì lấy chính nó.
+	local container = model
+	if #model:GetChildren() == 1 and model:GetChildren()[1]:IsA("Model") then
+		container = model:GetChildren()[1]
+	end
+	
+	print("🔨 Đang tháo dỡ hộp: " .. container.Name .. " (Chứa " .. #container:GetChildren() .. " mục)")
 
-	-- HÀM DI CHUYỂN THÔNG MINH
+	-- HÀM DI CHUYỂN
 	local function MoveContents(folder, destination)
 		for _, item in pairs(folder:GetChildren()) do
 			if destination.Name == "StarterGui" then
@@ -62,10 +69,10 @@ local function Install()
 		end
 	end
 
-	-- [[ PHÂN LOẠI ĐỒ ĐẠC ]] --
+	-- [[ PHÂN LOẠI TOÀN BỘ ]] --
+	-- Duyệt qua TẤT CẢ các folder (Lighting, ServerStorage, v.v...)
 	for _, folder in pairs(container:GetChildren()) do
-		local folderName = folder.Name -- [ĐÃ SỬA] Dùng biến folderName cho thống nhất
-		
+		local folderName = folder.Name
 		local isService, service = pcall(function() return game:GetService(folderName) end)
 		
 		if isService and service then
@@ -73,13 +80,13 @@ local function Install()
 			MoveContents(folder, service)
 			folder:Destroy() 
 		else
-			-- [ĐÃ SỬA LỖI DÒNG 85 TẠI ĐÂY]
 			print("   🌍 Ném vào Workspace: " .. folderName) 
 			folder.Parent = workspace
 			if folder:IsA("Script") then folder.Disabled = false end
 		end
 	end
 	
+	-- Dọn dẹp cái vỏ hộp cuối cùng
 	if container.Parent then 
 		if container.Name ~= "Workspace" and container.Name ~= "Model" then 
 			container.Parent = workspace 
@@ -89,7 +96,7 @@ local function Install()
 	task.wait(1)
 	print("🔄 Respawn người chơi...")
 	for _, p in pairs(Players:GetPlayers()) do p:LoadCharacter() end
-	print("✅ Cài đặt hoàn tất!")
+	print("✅ Cài đặt hoàn tất! (V6)")
 end
 
 task.spawn(Install)
